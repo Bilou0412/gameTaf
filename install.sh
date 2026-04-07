@@ -26,14 +26,16 @@ else
     echo "[*] Downloading project..."
     git clone https://github.com/Bilou0412/gameTaf.git "$INSTALL_DIR" 2>/dev/null || {
         echo "[*] Git not available, using direct download..."
-        mkdir -p "$INSTALL_DIR"
-        cd "$INSTALL_DIR"
         
         if command -v curl &> /dev/null; then
-            curl -fsSL "https://github.com/Bilou0412/gameTaf/archive/main.zip" -o /tmp/gametaf.zip
-            unzip -q /tmp/gametaf.zip -d /tmp/
-            mv /tmp/gameTaf-main/* "$INSTALL_DIR/" 2>/dev/null || mv /tmp/gameTaf-main/.* "$INSTALL_DIR/" 2>/dev/null || true
-            rm -rf /tmp/gametaf.zip /tmp/gameTaf-main
+            TEMP_DIR="/tmp/gametaf-$$"
+            mkdir -p "$TEMP_DIR"
+            curl -fsSL "https://github.com/Bilou0412/gameTaf/archive/main.zip" -o "$TEMP_DIR/gametaf.zip"
+            unzip -q -o "$TEMP_DIR/gametaf.zip" -d "$TEMP_DIR/"
+            mkdir -p "$INSTALL_DIR"
+            cp -r "$TEMP_DIR/gameTaf-main/"* "$INSTALL_DIR/" 2>/dev/null || true
+            cp -r "$TEMP_DIR/gameTaf-main/".* "$INSTALL_DIR/" 2>/dev/null || true
+            rm -rf "$TEMP_DIR"
         else
             echo "[ERROR] curl or git required"
             exit 1
