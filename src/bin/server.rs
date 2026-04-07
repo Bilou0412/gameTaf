@@ -42,7 +42,6 @@ fn points(correct: bool, time_secs: u32) -> u32 {
 }
 
 struct Player {
-    id: usize,
     name: String,
     score: u32,
     ready: bool,
@@ -153,7 +152,6 @@ fn main() -> std::io::Result<()> {
                 let player_idx = players.len();
                 players_by_id.insert(client_id, player_idx);
                 players.push(Player {
-                    id: client_id,
                     name: format!("Player{}", client_id),
                     score: 0,
                     ready: false,

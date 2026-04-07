@@ -12,7 +12,7 @@ enum Event {
 }
 
 #[derive(PartialEq)]
-enum Phase { Lobby, Game, Over }
+enum Phase { Lobby, Game }
 
 fn send_msg(stream: &mut TcpStream, msg: &Message) -> std::io::Result<()> {
     if let Ok(data) = bincode::serialize(msg) {
@@ -200,7 +200,6 @@ fn main() -> std::io::Result<()> {
                             let _ = send_msg(&mut stream, &Message::Chat { player: player_name.clone(), text: input });
                         }
                     }
-                    Phase::Over => {}
                 }
             }
 
