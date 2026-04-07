@@ -44,9 +44,9 @@ fn main() -> std::io::Result<()> {
         stdin.lock().read_line(&mut server_addr)?;
     }
     let server_addr = if server_addr.trim().is_empty() {
-        "127.0.0.1:9999".to_string()
+        "127.0.0.1:80".to_string()
     } else {
-        format!("{}:9999", server_addr.trim())
+        format!("{}:80", server_addr.trim())
     };
 
     print!("Your name: ");
