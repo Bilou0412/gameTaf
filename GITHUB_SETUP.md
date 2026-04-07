@@ -2,25 +2,9 @@
 
 Guide pour héberger le projet sur GitHub avec installation en une ligne.
 
-## Étape 1: Créer le repo GitHub
+## ✅ Repo déjà crée: Bilou0412/gameTaf
 
-1. Allez sur [GitHub](https://github.com/new)
-2. Remplissez les infos:
-   - **Repository name**: `termigame-pong`
-   - **Description**: "🎮 Un jeu Pong multijoueur en terminal sur UDP"
-   - **Public** (pour accessible partout)
-3. Cliquez **"Create repository"**
-
-## Étape 2: Push du code
-
-```bash
-cd ~/gameTaf
-git remote add origin https://github.com/VOTRE_USERNAME/termigame-pong.git
-git branch -M main
-git push -u origin main
-```
-
-Remplacez `VOTRE_USERNAME` par votre pseudo GitHub.
+Le repo existe déjà sur GitHub. Les URLs sont configurées correctement.
 
 ## Étape 3: Mettre à jour les URLs
 
@@ -71,18 +55,18 @@ Le fichier `.github/workflows/release.yml` compile automatiquement les binaires 
 
 Votre lien à partager :
 ```
-curl -fsSL https://raw.githubusercontent.com/VOTRE_USERNAME/termigame-pong/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/Bilou0412/gameTaf/main/install.sh | bash
 ```
 
 Ou sur Twitter: 
-> "🎮 Just launched Termigame Pong! One-liner install: curl -fsSL ... | bash"
+> "🎮 Just launched Termigame Pong! One-liner install: curl -fsSL https://raw.githubusercontent.com/Bilou0412/gameTaf/main/install.sh | bash"
 
 ---
 
 ## Structure du projet
 
 ```
-termigame-pong/
+gameTaf/
 ├── install.sh              # ← Script d'installation principal
 ├── INSTALL.md              # Installation detaillée
 ├── README.md               # Documentation utilisateur

@@ -5,7 +5,7 @@ Un jeu Pong classique jouable en terminal via UDP sur réseau local (LAN).
 ## 🚀 Installation (Une ligne !)
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/bilou0412/termigame-pong/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/Bilou0412/gameTaf/main/install.sh | bash
 ```
 
 ### Après installation
