@@ -1,125 +1,125 @@
-# 🎮 TERMIGAME PONG - Installation
+# GT - Installation Guide
 
-Installation en une ligne, simple et rapide !
+One-line simple and fast installation!
 
-## Installation rapide (One-liner)
+## Quick Install (One-liner)
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/bilou0412/termigame-pong/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/Bilou0412/gameTaf/main/install.sh | bash
 ```
 
 ---
 
-## Après l'installation
+## After Installation
 
-Une fois l'installation terminée, utilisez simplement :
+Once installed, simply run:
 
 ```bash
-termigame-pong
+gt
 ```
 
-Cela lance un **menu interactif** où vous pouvez choisir :
-- 🎮 **Lancer le serveur**
-- 👾 **Rejoindre une partie (client)**
-- 📖 **Afficher les contrôles**
+This launches an interactive menu where you can:
+- Start Server
+- Join Game (Client)
+- Show Controls
 
 ---
 
-## Prérequis
+## Requirements
 
-### Obligatoire
-- **Git** (pour le clone) - Ou `curl` en fallback
-- **Rust 1.70+** (optionnel si vous avez les binaires pré-compilés)
+### Required
+- **Git** (for cloning) - Or `curl` as fallback
+- **Rust 1.70+** (optional if you have pre-compiled binaries)
 
-### Installation de Rust (si nécessaire)
+### Install Rust
 ```bash
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 ```
 
 ---
 
-## Contrôles du jeu
+## Game Controls
 
-| Touche | Action |
-|--------|--------|
-| **W / Z** | Raquette vers le haut |
-| **S** | Raquette vers le bas |
-| **Q** | Quitter |
+| Key | Action |
+|-----|--------|
+| **W / Z** | Move paddle up |
+| **S** | Move paddle down |
+| **Q** | Quit |
 
 ---
 
-## Jouer au jeu
+## Playing the Game
 
-### Méthode 1: Même ordinateur (localhost)
+### Method 1: Same Computer (localhost)
 ```bash
-# Terminal 1 - Serveur
-termigame-pong
-# Choisissez option 1
+# Terminal 1 - Server
+gt
+# Choose option 1
 
 # Terminal 2 - Client 1
-termigame-pong
-# Choisissez option 2
-# Entrez: 127.0.0.1
+gt
+# Choose option 2
+# Enter: 127.0.0.1
 
 # Terminal 3 - Client 2
-termigame-pong
-# Choisissez option 2
-# Entrez: 127.0.0.1
+gt
+# Choose option 2
+# Enter: 127.0.0.1
 ```
 
-### Méthode 2: Sur un réseau (LAN)
+### Method 2: Over Network (LAN)
 ```bash
-# Sur l'ordinateur serveur
-termigame-pong
-# Choisissez option 1
-# Notez l'adresse IP affichée (ex: 192.168.1.100)
+# On the server computer
+gt
+# Choose option 1
+# Note the IP address shown (e.g., 192.168.1.100)
 
-# Sur les ordinateurs clients
-termigame-pong
-# Choisissez option 2
-# Entrez l'adresse IP du serveur
+# On client computers
+gt
+# Choose option 2
+# Enter the server IP address
 ```
 
 ---
 
-## Désinstallation
+## Uninstall
 
 ```bash
-rm -rf ~/.termigame-pong
+rm -rf ~/.gt
 ```
 
-Puis supprimez la ligne `termigame-pong` de votre `~/.zshrc` ou `~/.bashrc`.
+Then remove the `GT installation` line from your `~/.zshrc` or `~/.bashrc`.
 
 ---
 
-## Mise à jour
+## Update
 
-Réexécutez simplement le script d'installation :
+Simply run the install script again:
 ```bash
-curl -fsSL https://raw.githubusercontent.com/bilou0412/termigame-pong/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/Bilou0412/gameTaf/main/install.sh | bash
 ```
 
 ---
 
-## Dépannage
+## Troubleshooting
 
-**"Commande non trouvée termigame-pong"**
+**"gt: command not found"**
 ```bash
 source ~/.zshrc
-# ou
+# or
 source ~/.bashrc
 ```
 
-**"Erreur de compilation"**
-Assurez-vous que Rust 1.70+ est installé :
+**"Build failed"**
+Make sure Rust 1.70+ is installed:
 ```bash
 rustup update
 ```
 
 ---
 
-## À propos
+## About
 
-🎮 Un classique du jeu vidéo, revisité en terminal UDP!
+Classic Pong game reimagined in the terminal with UDP networking!
 
-[Voir le projet sur GitHub](https://github.com/USER/termigame-pong)
+[View on GitHub](https://github.com/Bilou0412/gameTaf)

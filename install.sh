@@ -1,67 +1,41 @@
 #!/bin/bash
 
-# 🎮 TERMIGAME PONG - Installer
-# Installation simple du jeu Pong multijoueur
+# GT - Multiplayer Pong Game Installation Script
 
-set -e  # Exit on error
+set -e
 
-# Colors for output
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-NC='\033[0m' # No Color
-
-# Install directory
-INSTALL_DIR="$HOME/.termigame-pong"
+INSTALL_DIR="$HOME/.gt"
 BIN_DIR="$INSTALL_DIR/bin"
+APP_NAME="GT"
 
-echo -e "${BLUE}╔════════════════════════════════════════════════════════════════╗${NC}"
-echo -e "${BLUE}║         🎮 TERMIGAME PONG - Installation 🎮                   ║${NC}"
-echo -e "${BLUE}╚════════════════════════════════════════════════════════════════╝${NC}"
+echo "======================================"
+echo "  $APP_NAME - Installation"
+echo "======================================"
 echo ""
 
-# Check if Rust is installed (optional, but recommended)
-if ! command -v cargo &> /dev/null; then
-    echo -e "${YELLOW}⚠️  Rust n'est pas installé.${NC}"
-    echo -e "Installation disponible sur ${BLUE}https://rustup.rs/${NC}"
-    echo ""
-    read -p "Continuer sans Rust ? (y/n) " -n 1 -r
-    echo
-    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-        echo -e "${RED}Installation annulée.${NC}"
-        exit 1
-    fi
-    NEED_COMPILE=true
-else
-    NEED_COMPILE=false
-fi
-
-# Create install directory
-echo -e "${YELLOW}📁 Création du répertoire d'installation...${NC}"
+# Create installation directory
+echo "[*] Creating installation directory..."
 mkdir -p "$BIN_DIR"
 
-# Clone or update the repository
+# Clone or update repository
 if [ -d "$INSTALL_DIR/.git" ]; then
-    echo -e "${YELLOW}📦 Mise à jour du dossier existant...${NC}"
+    echo "[*] Updating existing installation..."
     cd "$INSTALL_DIR"
     git pull origin main 2>/dev/null || true
 else
-    echo -e "${YELLOW}📥 Téléchargement du projet...${NC}"
+    echo "[*] Downloading project..."
     git clone https://github.com/Bilou0412/gameTaf.git "$INSTALL_DIR" 2>/dev/null || {
-        # Fallback if git is not available
-        echo -e "${YELLOW}Git non disponible, téléchargement direct...${NC}"
+        echo "[*] Git not available, using direct download..."
         mkdir -p "$INSTALL_DIR"
         cd "$INSTALL_DIR"
         
-        # Download with curl (simple fallback)
         if command -v curl &> /dev/null; then
-            curl -fsSL "https://github.com/Bilou0412/gameTaf/archive/main.zip" -o /tmp/termigame.zip
-            unzip -q /tmp/termigame.zip -d /tmp/
-            mv /tmp/gameTaf-main/* "$INSTALL_DIR/"
-            rm -rf /tmp/termigame.zip /tmp/termigame-pong-main
+            curl -fsSL "https://github.com/Bilou0412/gameTaf/archive/main.zip" -o /tmp/gametaf.zip
+            unzip -q /tmp/gametaf.zip -d /tmp/
+            mv /tmp/gameTaf-main/* "$INSTALL_DIR/" 2>/dev/null || mv /tmp/gameTaf-main/.* "$INSTALL_DIR/" 2>/dev/null || true
+            rm -rf /tmp/gametaf.zip /tmp/gameTaf-main
         else
-            echo -e "${RED}❌ Erreur: curl ou git requis${NC}"
+            echo "[ERROR] curl or git required"
             exit 1
         fi
     }
@@ -69,90 +43,80 @@ fi
 
 cd "$INSTALL_DIR"
 
-# Compile if Rust is available
-if [ "$NEED_COMPILE" = false ]; then
-    echo -e "${YELLOW}🔨 Compilation du projet...${NC}"
-    cargo build --release 2>/dev/null || {
-        echo -e "${RED}❌ Compilation échouée${NC}"
-        exit 1
-    }
-    
-    # Copy binaries
-    echo -e "${YELLOW}📋 Installation des binaires...${NC}"
-    cp target/release/client "$BIN_DIR/termigame-client" 2>/dev/null || true
-    cp target/release/server "$BIN_DIR/termigame-server" 2>/dev/null || true
+# Build the project
+echo "[*] Building project..."
+if ! cargo build --release 2>/dev/null; then
+    echo "[ERROR] Build failed. Make sure Rust is installed (https://rustup.rs)"
+    exit 1
 fi
 
-# Create launcher script
-cat > "$BIN_DIR/termigame-pong" << 'LAUNCHER_EOF'
+echo "[*] Installing binaries..."
+cp target/release/client "$BIN_DIR/gt-client" 2>/dev/null || true
+cp target/release/server "$BIN_DIR/gt-server" 2>/dev/null || true
+
+# Create main launcher script
+cat > "$BIN_DIR/gt" << 'LAUNCHER_EOF'
 #!/bin/bash
 
-INSTALL_DIR="$HOME/.termigame-pong"
+INSTALL_DIR="$HOME/.gt"
 BIN_DIR="$INSTALL_DIR/bin"
-
-# Colors
-BLUE='\033[0;34m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-NC='\033[0m'
 
 show_menu() {
     clear
-    echo -e "${BLUE}╔════════════════════════════════════════════════════════════════╗${NC}"
-    echo -e "${BLUE}║         🎮 TERMIGAME PONG - Menu Principal 🎮                  ║${NC}"
-    echo -e "${BLUE}╚════════════════════════════════════════════════════════════════╝${NC}"
+    echo "======================================="
+    echo "  GT - Main Menu"
+    echo "======================================="
     echo ""
-    echo -e "  ${GREEN}1${NC} - 🎮 Lancer le serveur"
-    echo -e "  ${GREEN}2${NC} - 👾 Rejoindre une partie (client)"
-    echo -e "  ${GREEN}3${NC} - 📖 Afficher les contrôles"
-    echo -e "  ${GREEN}4${NC} - ❌ Quitter"
+    echo "  1 - Start Server"
+    echo "  2 - Join Game (Client)"
+    echo "  3 - Show Controls"
+    echo "  4 - Exit"
     echo ""
-    echo -e "${YELLOW}Choisissez une option (1-4):${NC} "
+    echo -n "Choose option (1-4): "
 }
 
 show_controls() {
     clear
-    echo -e "${BLUE}╔════════════════════════════════════════════════════════════════╗${NC}"
-    echo -e "${BLUE}║              🎮 Contrôles du Jeu 🎮                            ║${NC}"
-    echo -e "${BLUE}╚════════════════════════════════════════════════════════════════╝${NC}"
+    echo "======================================="
+    echo "  GT - Game Controls"
+    echo "======================================="
     echo ""
-    echo -e "  ${GREEN}W ou Z${NC}  - Déplacer la raquette vers le haut"
-    echo -e "  ${GREEN}S${NC}      - Déplacer la raquette vers le bas"
-    echo -e "  ${GREEN}Q${NC}      - Quitter le jeu"
+    echo "  W or Z  - Move paddle up"
+    echo "  S      - Move paddle down"
+    echo "  Q      - Quit game"
     echo ""
-    echo "  🏐 Le ballon rebondit sur les surfaces!"
-    echo "  🎯 Gagnez 3 points pour remporter la partie!"
+    echo "  Ball bounces on surfaces"
+    echo "  First to 3 points wins!"
     echo ""
-    read -p "Appuyez sur Entrée pour revenir au menu..."
+    read -p "Press Enter to return to menu..."
 }
 
 run_server() {
     clear
-    echo -e "${GREEN}🎮 Lancement du serveur...${NC}"
+    echo "Starting Server..."
     echo ""
     
-    if [ -f "$BIN_DIR/termigame-server" ]; then
-        exec "$BIN_DIR/termigame-server"
+    if [ -f "$BIN_DIR/gt-server" ]; then
+        exec "$BIN_DIR/gt-server"
     else
-        echo -e "${YELLOW}Compilation du serveur...${NC}"
+        echo "Building server..."
         cd "$INSTALL_DIR" && cargo run --release --bin server
     fi
 }
 
 run_client() {
     clear
-    echo -e "${GREEN}👾 Lancement du client...${NC}"
+    echo "Starting Client..."
     echo ""
     
-    if [ -f "$BIN_DIR/termigame-client" ]; then
-        exec "$BIN_DIR/termigame-client"
+    if [ -f "$BIN_DIR/gt-client" ]; then
+        exec "$BIN_DIR/gt-client"
     else
-        echo -e "${YELLOW}Compilation du client...${NC}"
+        echo "Building client..."
         cd "$INSTALL_DIR" && cargo run --release --bin client
     fi
 }
 
-# Main loop
 while true; do
     show_menu
     read -r choice
@@ -168,18 +132,18 @@ while true; do
             show_controls
             ;;
         4)
-            echo -e "${GREEN}Au revoir! 👋${NC}"
+            echo "Goodbye"
             exit 0
             ;;
         *)
-            echo -e "${YELLOW}Option invalide. Appuyez sur Entrée pour réessayer...${NC}"
+            echo "Invalid option. Press Enter to retry..."
             read
             ;;
     esac
 done
 LAUNCHER_EOF
 
-chmod +x "$BIN_DIR/termigame-pong"
+chmod +x "$BIN_DIR/gt"
 
 # Add to PATH
 SHELL_RC=""
@@ -191,27 +155,26 @@ else
     SHELL_RC="$HOME/.bash_profile"
 fi
 
-if ! grep -q "termigame-pong" "$SHELL_RC"; then
+if ! grep -q "GT installation" "$SHELL_RC" 2>/dev/null; then
     echo "" >> "$SHELL_RC"
-    echo "# TERMIGAME PONG PATH" >> "$SHELL_RC"
+    echo "# GT installation" >> "$SHELL_RC"
     echo "export PATH=\"\$PATH:$BIN_DIR\"" >> "$SHELL_RC"
 fi
 
-# Final message
+# Success message
 echo ""
-echo -e "${GREEN}╔════════════════════════════════════════════════════════════════╗${NC}"
-echo -e "${GREEN}║        ✅ Installation terminée avec succès! ✅                ║${NC}"
-echo -e "${GREEN}╚════════════════════════════════════════════════════════════════╝${NC}"
+echo "======================================="
+echo "  Installation Complete!"
+echo "======================================="
 echo ""
-echo -e "${YELLOW}🚀 Démarrage rapide:${NC}"
+echo "Quick start:"
+echo "  gt"
 echo ""
-echo -e "  ${BLUE}termigame-pong${NC}  - Lance le menu principal"
-echo ""
-echo -e "${YELLOW}⚙️  Répertoire d'installation:${NC}"
+echo "Installation directory:"
 echo "  $INSTALL_DIR"
 echo ""
-echo -e "${YELLOW}📝 Recharger votre shell:${NC}"
-echo "  ${BLUE}source $SHELL_RC${NC}"
+echo "Reload shell:"
+echo "  source $SHELL_RC"
 echo ""
-echo -e "${YELLOW}ou ouvrez un nouveau terminal.${NC}"
+echo "Or open a new terminal."
 echo ""
