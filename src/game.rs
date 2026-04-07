@@ -39,4 +39,7 @@ pub enum Message {
     AnswerResult { correct: bool, score: u32 },
     NextQuestion,
     GameOver { final_score: u32 },
+    TimerStart { seconds: u32 },
+    TimerTick { remaining: u32 },
+    Chat { player: String, text: String },
 }
