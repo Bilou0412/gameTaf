@@ -1,5 +1,6 @@
 use std::net::UdpSocket;
 use std::time::Duration;
+use std::collections::HashMap;
 use termigame_pong::game::{Message, Question};
 
 fn get_questions() -> Vec<Question> {
@@ -62,23 +63,6 @@ fn get_questions() -> Vec<Question> {
     ]
 }
 
-fn get_local_ip() -> String {
-    match UdpSocket::bind("0.0.0.0:0") {
-        Ok(socket) => {
-            match socket.connect("8.8.8.8:80") {
-                Ok(_) => {
-                    match socket.local_addr() {
-                        Ok(addr) => addr.ip().to_string(),
-                        Err(_) => "127.0.0.1".to_string(),
-                    }
-                }
-                Err(_) => "127.0.0.1".to_string(),
-            }
-        }
-        Err(_) => "127.0.0.1".to_string(),
-    }
-}
-
 fn main() -> std::io::Result<()> {
     let socket = UdpSocket::bind("0.0.0.0:9999")?;
     socket.set_read_timeout(Some(Duration::from_millis(100)))?;
@@ -95,26 +79,31 @@ fn main() -> std::io::Result<()> {
     println!("GT Server on {}:9999", local_ip);
 
     let questions = get_questions();
-
+    let total_questions = questions.len();
+    
     let mut connected_players: Vec<std::net::SocketAddr> = Vec::new();
-    let mut player_scores: std::collections::HashMap<std::net::SocketAddr, u32> = std::collections::HashMap::new();
+    let mut player_scores: HashMap<std::net::SocketAddr, u32> = HashMap::new();
     let mut current_question_idx = 0;
+    let mut answered_this_round: HashMap<std::net::SocketAddr, bool> = HashMap::new();
     let mut buf = [0; 512];
 
     loop {
-        // Receive messages from clients
         if let Ok((n, addr)) = socket.recv_from(&mut buf) {
+            // Track new players
             if !connected_players.contains(&addr) {
                 connected_players.push(addr);
                 player_scores.insert(addr, 0);
+                answered_this_round.insert(addr, false);
                 println!("Player connected: {} (total: {})", addr, connected_players.len());
             }
 
             if let Ok(msg) = bincode::deserialize::<Message>(&buf[..n]) {
                 match msg {
                     Message::QuestionRequest => {
-                        if current_question_idx < questions.len() {
+                        if current_question_idx < total_questions {
                             let question = questions[current_question_idx].clone();
+                            answered_this_round.insert(addr, false);
+                            
                             if let Ok(data) = bincode::serialize(&Message::Question(question)) {
                                 socket.send_to(&data, addr).ok();
                             }
@@ -126,7 +115,7 @@ fn main() -> std::io::Result<()> {
                         }
                     }
                     Message::Answer(choice) => {
-                        if current_question_idx < questions.len() {
+                        if current_question_idx < total_questions {
                             let question = &questions[current_question_idx];
                             let is_correct = choice == question.correct;
                             
@@ -135,22 +124,36 @@ fn main() -> std::io::Result<()> {
                                 *score += 1;
                             }
                             
+                            answered_this_round.insert(addr, true);
+                            
+                            let current_score = *score;
                             if let Ok(data) = bincode::serialize(&Message::AnswerResult {
                                 correct: is_correct,
-                                score: *score,
+                                score: current_score,
                             }) {
                                 socket.send_to(&data, addr).ok();
                             }
+                            
+                            // Check if all players have answered
+                            let all_answered = connected_players.iter()
+                                .all(|p| *answered_this_round.get(p).unwrap_or(&false));
+                            
+                            if all_answered && connected_players.len() > 0 {
+                                println!("All players answered question {}. Scores:", current_question_idx + 1);
+                                for (player, score) in player_scores.iter() {
+                                    println!("  {}: {}", player, score);
+                                }
+                                current_question_idx += 1;
+                                answered_this_round.clear();
+                                for player in &connected_players {
+                                    answered_this_round.insert(*player, false);
+                                }
+                            }
                         }
-                    }
-                    Message::NextQuestion => {
-                        current_question_idx += 1;
                     }
                     _ => {}
                 }
             }
         }
-
-        std::thread::sleep(Duration::from_millis(10));
     }
 }
