@@ -82,11 +82,8 @@ fn get_local_ip() -> String {
 fn main() -> std::io::Result<()> {
     let socket = UdpSocket::bind("0.0.0.0:9999")?;
     socket.set_read_timeout(Some(Duration::from_millis(100)))?;
-    
+
     let questions = get_questions();
-    let local_ip = get_local_ip();
-    println!("🎮 Serveur Quiz démarré sur {}:9999", local_ip);
-    println!("En attente des joueurs...\n");
 
     let mut connected_players: Vec<std::net::SocketAddr> = Vec::new();
     let mut player_scores: std::collections::HashMap<std::net::SocketAddr, u32> = std::collections::HashMap::new();
@@ -99,19 +96,15 @@ fn main() -> std::io::Result<()> {
             if !connected_players.contains(&addr) {
                 connected_players.push(addr);
                 player_scores.insert(addr, 0);
-                println!("✓ Joueur connecté: {} (Total: {})", addr, connected_players.len());
             }
 
             if let Ok(msg) = bincode::deserialize::<Message>(&buf[..n]) {
-                eprintln!("📨 Message reçu du client {}", addr);
                 match msg {
                     Message::QuestionRequest => {
-                        eprintln!("  → QuestionRequest reçu de {}", addr);
                         if current_question_idx < questions.len() {
                             let question = questions[current_question_idx].clone();
                             if let Ok(data) = bincode::serialize(&Message::Question(question)) {
-                                let sent = socket.send_to(&data, addr);
-                                eprintln!("  → Question envoyée à {}: {:?}", addr, sent);
+                                socket.send_to(&data, addr).ok();
                             }
                         } else {
                             let final_score = *player_scores.get(&addr).unwrap_or(&0);

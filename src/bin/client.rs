@@ -6,11 +6,7 @@ use termigame_pong::game::{Message, Question};
 use termigame_pong::renderer::Renderer;
 
 fn main() -> std::io::Result<()> {
-    println!("╔════════════════════════════════════════╗");
-    println!("║  🎮 TERMIGAME QUIZ - Client  🎮      ║");
-    println!("╚════════════════════════════════════════╝\n");
-
-    print!("Adresse du serveur (défaut: 127.0.0.1): ");
+    print!("Server address (default: 127.0.0.1): ");
     io::stdout().flush()?;
     let mut server_addr = String::new();
     io::stdin().read_line(&mut server_addr)?;
@@ -24,10 +20,6 @@ fn main() -> std::io::Result<()> {
     socket.set_read_timeout(Some(Duration::from_secs(2)))?;
     socket.connect(&server_addr)?;
 
-    println!("\n✓ Connecté au serveur: {}\n", server_addr);
-    println!("Appuyez sur Entrée pour commencer...");
-    let _ = io::stdin().read_line(&mut String::new());
-
     let mut current_question: Option<Question> = None;
     let mut current_num = 0;
     let total_questions = 5;
@@ -36,19 +28,16 @@ fn main() -> std::io::Result<()> {
         if current_question.is_none() {
             current_num += 1;
             
-            // Demande une question
+            // Request question
             if let Ok(data) = bincode::serialize(&Message::QuestionRequest) {
-                let sent = socket.send(&data);
-                eprintln!("📤 QuestionRequest envoyé: {:?}", sent);
+                socket.send(&data).ok();
             }
 
-            // Attend la réponse du serveur
+            // Wait for response
             let mut buf = [0; 512];
             loop {
-                eprintln!("⏳ En attente de réponse...");
                 match socket.recv(&mut buf) {
                     Ok(n) => {
-                        eprintln!("📥 Réponse reçue ({} bytes)", n);
                         if let Ok(msg) = bincode::deserialize::<Message>(&buf[..n]) {
                             match msg {
                                 Message::Question(q) => {
@@ -62,7 +51,6 @@ fn main() -> std::io::Result<()> {
                                 }
                                 Message::GameOver { final_score } => {
                                     Renderer::draw_game_over(final_score);
-                                    println!("\n👋 Fin du jeu!");
                                     return Ok(());
                                 }
                                 _ => {}
@@ -71,13 +59,9 @@ fn main() -> std::io::Result<()> {
                         break;
                     }
                     Err(ref e) if e.kind() == io::ErrorKind::TimedOut => {
-                        // Timeout - continue à attendre
-                        eprintln!("⏱️ Timeout - en attente...");
                         continue;
                     }
-                    Err(e) => {
-                        eprintln!("❌ Erreur de connexion: {} ({})", e, e.kind());
-                        println!("Erreur de connexion au serveur");
+                    Err(_) => {
                         return Ok(());
                     }
                 }
