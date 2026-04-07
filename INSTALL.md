@@ -5,7 +5,7 @@ Installation en une ligne, simple et rapide !
 ## Installation rapide (One-liner)
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/USER/termigame-pong/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/bilou0412/termigame-pong/main/install.sh | bash
 ```
 
 ---
