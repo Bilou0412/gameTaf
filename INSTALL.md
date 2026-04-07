@@ -12,16 +12,19 @@ curl -fsSL https://raw.githubusercontent.com/Bilou0412/gameTaf/main/install.sh |
 
 ## After Installation
 
-Once installed, simply run:
+Start the game server:
 
 ```bash
-gt
+gt server
 ```
 
-This launches an interactive menu where you can:
-- Start Server
-- Join Game (Client)
-- Show Controls
+Join the game from another terminal/computer:
+
+```bash
+gt client
+```
+
+Then enter the server IP address when prompted.
 
 ---
 
@@ -53,31 +56,21 @@ curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 ### Method 1: Same Computer (localhost)
 ```bash
 # Terminal 1 - Server
-gt
-# Choose option 1
+gt server
 
-# Terminal 2 - Client 1
-gt
-# Choose option 2
-# Enter: 127.0.0.1
-
-# Terminal 3 - Client 2
-gt
-# Choose option 2
-# Enter: 127.0.0.1
+# Terminal 2 - Client
+gt client
+# When prompted: Enter 127.0.0.1
 ```
 
 ### Method 2: Over Network (LAN)
 ```bash
-# On the server computer
-gt
-# Choose option 1
-# Note the IP address shown (e.g., 192.168.1.100)
+# Terminal 1 - On server computer
+gt server
 
-# On client computers
-gt
-# Choose option 2
-# Enter the server IP address
+# Terminal 2+ - On client computers
+gt client
+# When prompted: Enter the server IP address
 ```
 
 ---
@@ -120,6 +113,6 @@ rustup update
 
 ## About
 
-Classic Pong game reimagined in the terminal with UDP networking!
+Trivia quiz game reimagined in the terminal with UDP networking!
 
 [View on GitHub](https://github.com/Bilou0412/gameTaf)

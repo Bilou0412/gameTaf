@@ -1,6 +1,6 @@
-# GT - Multiplayer Pong Game
+# GT - Multiplayer Quiz Game
 
-Classic Pong game playable in terminal via UDP on local network (LAN).
+Classic trivia game playable in terminal via UDP on local network (LAN).
 
 ## Quick Install (One-liner)
 
@@ -10,33 +10,32 @@ curl -fsSL https://raw.githubusercontent.com/Bilou0412/gameTaf/main/install.sh |
 
 ## After Installation
 
+Start server:
 ```bash
-gt
+gt server
 ```
 
-Interactive menu to choose:
-- Start Server
-- Join Game (Client)
-- Show Controls
+Join game:
+```bash
+gt client
+```
 
 See [Installation Guide](INSTALL.md) for more details.
 
-## Game Controls
+## Game Flow
 
-| Key | Action |
-|-----|--------|
-| **W/Z** | Move paddle up |
-| **S** | Move paddle down |
-| **Q** | Quit game |
+1. Server hosts the quiz questions
+2. Clients connect and answer questions
+3. Score is tracked per player
+4. Game ends after all questions are answered
 
 ## Architecture
 
-- **Server (server.rs)**: Manages game logic and state synchronization
-- **Client (client.rs)**: Player interface and network communication
+- **Server (server.rs)**: Hosts quiz questions and manages player scores
+- **Client (client.rs)**: Player interface for answering questions
 - **Modules**:
-  - `game::GameState`: Physics and collision detection
-  - `renderer::Renderer`: ASCII display rendering
-  - `input::InputHandler`: Keyboard input handling
+  - `game::Message`: Quiz question and answer protocol
+  - `renderer::Renderer`: ASCII display for game state
 
 ## Network Configuration
 
@@ -48,23 +47,18 @@ To play on different computers:
 
 ## Features
 
-- Classic 2-player Pong
+- Multiplayer trivia quiz
 - Real-time UDP communication
-- ASCII rendering with borders
-- Automatic scoring system
-- Realistic ball physics
-- 80x24 character display
+- ASCII text-based interface
+- Automatic score tracking
+- Simple binary question protocol
 
 ## Troubleshooting
 
 **Clients can't connect?**
-- Ensure server is running
-- Check IP address (use `localhost` on same machine)
-- Check firewall (UDP port 9999)
-
-**Display looks corrupted?**
-- Expand terminal to at least 80x24 characters
-- Use a terminal supporting Unicode
+- Ensure server is running (gt server)
+- Check IP address (use 127.0.0.1 on same machine)
+- Verify firewall allows UDP port 9999
 
 ## License
 
