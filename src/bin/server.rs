@@ -83,6 +83,17 @@ fn main() -> std::io::Result<()> {
     let socket = UdpSocket::bind("0.0.0.0:9999")?;
     socket.set_read_timeout(Some(Duration::from_millis(100)))?;
 
+    // Get local IP
+    let local_ip = UdpSocket::bind("0.0.0.0:0")
+        .and_then(|s| {
+            s.connect("8.8.8.8:80").ok();
+            s.local_addr()
+        })
+        .map(|addr| addr.ip().to_string())
+        .unwrap_or_else(|_| "127.0.0.1".to_string());
+    
+    println!("GT Server on {}:9999", local_ip);
+
     let questions = get_questions();
 
     let mut connected_players: Vec<std::net::SocketAddr> = Vec::new();
@@ -91,11 +102,12 @@ fn main() -> std::io::Result<()> {
     let mut buf = [0; 512];
 
     loop {
-        // Reçoive les messages des clients
+        // Receive messages from clients
         if let Ok((n, addr)) = socket.recv_from(&mut buf) {
             if !connected_players.contains(&addr) {
                 connected_players.push(addr);
                 player_scores.insert(addr, 0);
+                println!("Player connected: {} (total: {})", addr, connected_players.len());
             }
 
             if let Ok(msg) = bincode::deserialize::<Message>(&buf[..n]) {

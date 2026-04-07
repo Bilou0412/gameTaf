@@ -1,5 +1,5 @@
 use std::net::UdpSocket;
-use std::io::{self, Write, Read};
+use std::io::{self, Write};
 use std::time::Duration;
 use std::thread;
 use termigame_pong::game::{Message, Question};
@@ -67,8 +67,8 @@ fn main() -> std::io::Result<()> {
                 }
             }
         } else {
-            // En attente de réponse du joueur
-            if let Ok(answer_str) = read_input_timeout(Duration::from_millis(100)) {
+            // Wait for player answer
+            if let Ok(answer_str) = read_input_timeout(Duration::from_secs(10)) {
                 if let Ok(choice) = answer_str.trim().parse::<usize>() {
                     if choice >= 1 && choice <= 4 {
                         let choice_idx = choice - 1;
@@ -109,18 +109,17 @@ fn main() -> std::io::Result<()> {
 
 fn read_input_timeout(timeout: Duration) -> io::Result<String> {
     use std::sync::mpsc;
+    use std::io::BufRead;
 
     let (tx, rx) = mpsc::channel();
 
     thread::spawn(move || {
-        let mut stdin = io::stdin();
-        let mut buffer = [0; 2];
-        if let Ok(n) = stdin.read(&mut buffer) {
-            if n > 0 {
-                let s = std::str::from_utf8(&buffer[..n])
-                    .unwrap_or("")
-                    .to_string();
-                tx.send(s).ok();
+        let mut line = String::new();
+        let stdin = io::stdin();
+        let mut handle = stdin.lock();
+        if let Ok(_) = handle.read_line(&mut line) {
+            if !line.is_empty() {
+                tx.send(line).ok();
             }
         }
     });
