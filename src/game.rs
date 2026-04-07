@@ -33,13 +33,19 @@ impl GameState {
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum Message {
-    QuestionRequest,
-    Question(Question),
+    // Connection
+    Join { name: String },
+    // Lobby
+    LobbyState { players: Vec<(String, bool)> },
+    Ready,
+    GameStart,
+    // In-game (server pushes to all simultaneously)
+    QuestionMsg { question: Question, num: usize, total: usize, timer: u32 },
     Answer(usize),
-    AnswerResult { correct: bool, score: u32 },
-    NextQuestion,
-    GameOver { final_score: u32 },
-    TimerStart { seconds: u32 },
-    TimerTick { remaining: u32 },
+    AnswerResult { correct: bool, points: u32, score: u32, correct_answer: usize },
+    WaitingForOthers,
+    RoundEnd { scores: Vec<(String, u32)> },
+    GameOver { scores: Vec<(String, u32)> },
+    // Chat
     Chat { player: String, text: String },
 }

@@ -1,131 +1,207 @@
 use std::net::UdpSocket;
-use std::io::{self, Write};
-use std::time::Duration;
+use std::io::{self, Write, BufRead};
+use std::time::{Duration, Instant};
 use std::thread;
+use std::sync::mpsc;
 use termigame_pong::game::{Message, Question};
 use termigame_pong::renderer::Renderer;
+
+enum Event {
+    Net(Message),
+    Input(String),
+}
+
+#[derive(PartialEq)]
+enum Phase { Lobby, Game, Over }
+
+fn send_msg(socket: &UdpSocket, msg: &Message) {
+    if let Ok(data) = bincode::serialize(msg) {
+        socket.send(&data).ok();
+    }
+}
+
+fn prompt(timer: Option<(&Instant, u32)>) {
+    if let Some((start, duration)) = timer {
+        let elapsed = start.elapsed().as_secs() as u32;
+        let remaining = duration.saturating_sub(elapsed);
+        print!("\r[{}s] Answer (1-4) or chat: ", remaining);
+    } else {
+        print!("> ");
+    }
+    io::stdout().flush().ok();
+}
 
 fn main() -> std::io::Result<()> {
     print!("Server address (default: 127.0.0.1): ");
     io::stdout().flush()?;
     let mut server_addr = String::new();
-    io::stdin().read_line(&mut server_addr)?;
+    {
+        let stdin = io::stdin();
+        stdin.lock().read_line(&mut server_addr)?;
+    }
     let server_addr = if server_addr.trim().is_empty() {
         "127.0.0.1:9999".to_string()
     } else {
         format!("{}:9999", server_addr.trim())
     };
 
+    print!("Your name: ");
+    io::stdout().flush()?;
+    let mut player_name = String::new();
+    {
+        let stdin = io::stdin();
+        stdin.lock().read_line(&mut player_name)?;
+    }
+    let player_name = player_name.trim().to_string();
+
     let socket = UdpSocket::bind("0.0.0.0:0")?;
-    socket.set_read_timeout(Some(Duration::from_secs(2)))?;
+    socket.set_read_timeout(Some(Duration::from_millis(100)))?;
     socket.connect(&server_addr)?;
 
-    let mut current_question: Option<Question> = None;
-    let mut current_num = 0;
-    let total_questions = 5;
+    send_msg(&socket, &Message::Join { name: player_name.clone() });
 
-    loop {
-        if current_question.is_none() {
-            current_num += 1;
-            
-            // Request question
-            if let Ok(data) = bincode::serialize(&Message::QuestionRequest) {
-                socket.send(&data).ok();
-            }
+    let (tx, rx) = mpsc::channel::<Event>();
 
-            // Wait for response
-            let mut buf = [0; 512];
-            loop {
-                match socket.recv(&mut buf) {
-                    Ok(n) => {
-                        if let Ok(msg) = bincode::deserialize::<Message>(&buf[..n]) {
-                            match msg {
-                                Message::Question(q) => {
-                                    current_question = Some(q);
-                                    Renderer::draw_question(
-                                        current_question.as_ref().unwrap(),
-                                        current_num,
-                                        total_questions,
-                                    );
-                                    break;
-                                }
-                                Message::GameOver { final_score } => {
-                                    Renderer::draw_game_over(final_score);
-                                    return Ok(());
-                                }
-                                _ => {}
-                            }
-                        }
-                        break;
-                    }
-                    Err(ref e) if e.kind() == io::ErrorKind::TimedOut => {
-                        continue;
-                    }
-                    Err(_) => {
-                        return Ok(());
-                    }
-                }
-            }
-        } else {
-            // Wait for player answer
-            if let Ok(answer_str) = read_input_timeout(Duration::from_secs(10)) {
-                if let Ok(choice) = answer_str.trim().parse::<usize>() {
-                    if choice >= 1 && choice <= 4 {
-                        let choice_idx = choice - 1;
-                        
-                        // Envoie la réponse
-                        if let Ok(data) = bincode::serialize(&Message::Answer(choice_idx)) {
-                            socket.send(&data).ok();
-                        }
-
-                        // Attend le résultat
-                        let mut buf = [0; 512];
-                        if let Ok(n) = socket.recv(&mut buf) {
-                            if let Ok(msg) = bincode::deserialize::<Message>(&buf[..n]) {
-                                match msg {
-                                    Message::AnswerResult { correct, score } => {
-                                        Renderer::draw_result(correct, score);
-                                        thread::sleep(Duration::from_secs(2));
-                                        
-                                        // Demande la prochaine question
-                                        if let Ok(data) = bincode::serialize(&Message::NextQuestion) {
-                                            socket.send(&data).ok();
-                                        }
-                                        
-                                        current_question = None;
-                                    }
-                                    _ => {}
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        thread::sleep(Duration::from_millis(10));
-    }
-}
-
-fn read_input_timeout(timeout: Duration) -> io::Result<String> {
-    use std::sync::mpsc;
-    use std::io::BufRead;
-
-    let (tx, rx) = mpsc::channel();
-
+    // Network thread
+    let socket_net = socket.try_clone()?;
+    let tx_net = tx.clone();
     thread::spawn(move || {
-        let mut line = String::new();
-        let stdin = io::stdin();
-        let mut handle = stdin.lock();
-        if let Ok(_) = handle.read_line(&mut line) {
-            if !line.is_empty() {
-                tx.send(line).ok();
+        let mut buf = [0u8; 1024];
+        loop {
+            match socket_net.recv(&mut buf) {
+                Ok(n) => {
+                    if let Ok(msg) = bincode::deserialize::<Message>(&buf[..n]) {
+                        if tx_net.send(Event::Net(msg)).is_err() { break; }
+                    }
+                }
+                Err(ref e) if e.kind() == io::ErrorKind::WouldBlock
+                    || e.kind() == io::ErrorKind::TimedOut => {}
+                Err(_) => break,
             }
         }
     });
 
-    match rx.recv_timeout(timeout) {
-        Ok(input) => Ok(input),
-        Err(_) => Err(io::Error::new(io::ErrorKind::WouldBlock, "timeout")),
+    // Input thread
+    let tx_input = tx.clone();
+    thread::spawn(move || {
+        let stdin = io::stdin();
+        let handle = stdin.lock();
+        for line in handle.lines() {
+            match line {
+                Ok(l) => { if tx_input.send(Event::Input(l)).is_err() { break; } }
+                Err(_) => break,
+            }
+        }
+    });
+
+    println!("\n--- Lobby ---");
+    println!("'r' = ready   |   type text = chat");
+
+    let mut phase = Phase::Lobby;
+    let mut current_question: Option<Question> = None;
+    let mut q_timer: Option<(Instant, u32)> = None;
+
+    loop {
+        // Refresh timer display while in game
+        if phase == Phase::Game && q_timer.is_some() {
+            let (ref start, duration) = q_timer.as_ref().unwrap().clone();
+            let elapsed = start.elapsed().as_secs() as u32;
+            let remaining = duration.saturating_sub(elapsed);
+            print!("\r[{}s] Answer (1-4) or chat: ", remaining);
+            io::stdout().flush().ok();
+        }
+
+        match rx.recv_timeout(Duration::from_millis(250)) {
+            Ok(Event::Net(msg)) => match msg {
+                Message::LobbyState { players } => {
+                    println!("\n--- Lobby ({}/{} players) ---", players.len(), players.len());
+                    for (name, ready) in &players {
+                        let status = if *ready { "[READY]" } else { "[     ]" };
+                        println!("  {} {}", status, name);
+                    }
+                    println!("'r' = ready   |   type text = chat");
+                }
+                Message::GameStart => {
+                    println!("\n=== Game starting! ===");
+                    phase = Phase::Game;
+                }
+                Message::QuestionMsg { question, num, total, timer } => {
+                    current_question = Some(question.clone());
+                    q_timer = Some((Instant::now(), timer));
+                    println!("\n--- Question {}/{} ---", num, total);
+                    Renderer::draw_question(&question, num as u32, total as u32);
+                    prompt(q_timer.as_ref().map(|(s, d)| (s, *d)));
+                }
+                Message::AnswerResult { correct, points, score, correct_answer } => {
+                    println!();
+                    if correct {
+                        println!("Correct! +{} points  (score: {})", points, score);
+                    } else {
+                        println!("Wrong! Correct answer was {}  (score: {})", correct_answer + 1, score);
+                    }
+                    current_question = None;
+                    q_timer = None;
+                }
+                Message::WaitingForOthers => {
+                    println!("Waiting for other players...");
+                }
+                Message::RoundEnd { scores } => {
+                    println!("\n--- Scores ---");
+                    for (name, s) in &scores {
+                        println!("  {:20} {}", name, s);
+                    }
+                    println!("Next question coming...");
+                }
+                Message::GameOver { scores } => {
+                    println!("\n=== Game Over ===");
+                    for (i, (name, s)) in scores.iter().enumerate() {
+                        println!("  {}. {:20} {}", i + 1, name, s);
+                    }
+                    phase = Phase::Over;
+                    println!("--- Back to lobby ---");
+                    println!("'r' = ready   |   type text = chat");
+                    phase = Phase::Lobby;
+                    current_question = None;
+                    q_timer = None;
+                }
+                Message::Chat { player, text } => {
+                    println!("\n[{}] {}", player, text);
+                    if let Some(ref qt) = q_timer {
+                        let (ref start, duration) = qt;
+                        prompt(Some((start, *duration)));
+                    }
+                }
+                _ => {}
+            },
+
+            Ok(Event::Input(input)) => {
+                if input.is_empty() { continue; }
+                match phase {
+                    Phase::Lobby => {
+                        if input == "r" || input == "R" {
+                            send_msg(&socket, &Message::Ready);
+                        } else {
+                            send_msg(&socket, &Message::Chat { player: player_name.clone(), text: input });
+                        }
+                    }
+                    Phase::Game => {
+                        if let Ok(n) = input.parse::<usize>() {
+                            if n >= 1 && n <= 4 && current_question.is_some() {
+                                send_msg(&socket, &Message::Answer(n - 1));
+                                q_timer = None;
+                            }
+                        } else {
+                            send_msg(&socket, &Message::Chat { player: player_name.clone(), text: input });
+                        }
+                    }
+                    Phase::Over => {}
+                }
+            }
+
+            Err(mpsc::RecvTimeoutError::Timeout) => {}
+            Err(_) => break,
+        }
     }
+
+    Ok(())
 }
