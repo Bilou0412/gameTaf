@@ -2,44 +2,27 @@
 
 Un jeu Pong classique jouable en terminal via UDP sur réseau local (LAN).
 
-## 🚀 Démarrage rapide
+## 🚀 Installation (Une ligne !)
 
-### Prérequis
-- **Rust** 1.70+ ([installer](https://rustup.rs/))
-- Deux ordinateurs en réseau local ou deux terminaux sur la même machine
-
-### Installation
-
+### Linux & macOS
 ```bash
-cd termigame
-cargo build --release
+curl -fsSL https://raw.githubusercontent.com/USER/termigame-pong/main/install.sh | bash
 ```
 
-### Lancer le serveur
+### Windows
+Téléchargez le programme d'installation depuis les [Releases](https://github.com/USER/termigame-pong/releases)
 
+### Après installation
 ```bash
-cargo run --release --bin server
+termigame-pong
 ```
 
-Vous verrez:
-```
-🎮 Serveur Pong démarré sur 0.0.0.0:9999
-En attente des joueurs...
-```
+Un menu interactif vous permet de choisir :
+- 🎮 Lancer le serveur
+- 👾 Rejoindre une partie
+- 📖 Afficher les contrôles
 
-### Lancer les clients (x2)
-
-**Terminal 1 (Joueur 1):**
-```bash
-cargo run --release --bin client
-```
-
-**Terminal 2 (Joueur 2):**
-```bash
-cargo run --release --bin client
-```
-
-Entrez l'adresse du serveur (ex: `192.168.1.100` ou `127.0.0.1` en local).
+👉 **[Documentation complète d'installation](INSTALL.md)**
 
 ## 🎮 Contrôles
 
