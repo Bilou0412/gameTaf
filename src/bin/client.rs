@@ -1,5 +1,5 @@
-use std::net::UdpSocket;
-use std::io::{self, Write, BufRead};
+use std::net::TcpStream;
+use std::io::{self, Write, BufRead, Read};
 use std::time::{Duration, Instant};
 use std::thread;
 use std::sync::mpsc;
@@ -14,10 +14,14 @@ enum Event {
 #[derive(PartialEq)]
 enum Phase { Lobby, Game, Over }
 
-fn send_msg(socket: &UdpSocket, msg: &Message) {
+fn send_msg(stream: &mut TcpStream, msg: &Message) -> std::io::Result<()> {
     if let Ok(data) = bincode::serialize(msg) {
-        socket.send(&data).ok();
+        let len = data.len() as u32;
+        stream.write_all(&len.to_le_bytes())?;
+        stream.write_all(&data)?;
+        stream.flush()?;
     }
+    Ok(())
 }
 
 fn prompt(timer: Option<(&Instant, u32)>) {
@@ -54,23 +58,26 @@ fn main() -> std::io::Result<()> {
     }
     let player_name = player_name.trim().to_string();
 
-    let socket = UdpSocket::bind("0.0.0.0:0")?;
-    socket.set_read_timeout(Some(Duration::from_millis(100)))?;
-    socket.connect(&server_addr)?;
+    let mut stream = TcpStream::connect(&server_addr)?;
+    stream.set_read_timeout(Some(Duration::from_millis(100)))?;
 
-    send_msg(&socket, &Message::Join { name: player_name.clone() });
+    send_msg(&mut stream, &Message::Join { name: player_name.clone() })?;
 
     let (tx, rx) = mpsc::channel::<Event>();
 
     // Network thread
-    let socket_net = socket.try_clone()?;
+    let mut stream_net = stream.try_clone()?;
     let tx_net = tx.clone();
     thread::spawn(move || {
-        let mut buf = [0u8; 1024];
+        let mut len_buf = [0u8; 4];
         loop {
-            match socket_net.recv(&mut buf) {
-                Ok(n) => {
-                    if let Ok(msg) = bincode::deserialize::<Message>(&buf[..n]) {
+            match stream_net.read_exact(&mut len_buf) {
+                Ok(_) => {
+                    let len = u32::from_le_bytes(len_buf) as usize;
+                    if len > 65536 { break; }
+                    let mut data = vec![0u8; len];
+                    if stream_net.read_exact(&mut data).is_err() { break; }
+                    if let Ok(msg) = bincode::deserialize::<Message>(&data) {
                         if tx_net.send(Event::Net(msg)).is_err() { break; }
                     }
                 }
@@ -157,7 +164,6 @@ fn main() -> std::io::Result<()> {
                     for (i, (name, s)) in scores.iter().enumerate() {
                         println!("  {}. {:20} {}", i + 1, name, s);
                     }
-                    phase = Phase::Over;
                     println!("--- Back to lobby ---");
                     println!("'r' = ready   |   type text = chat");
                     phase = Phase::Lobby;
@@ -179,19 +185,19 @@ fn main() -> std::io::Result<()> {
                 match phase {
                     Phase::Lobby => {
                         if input == "r" || input == "R" {
-                            send_msg(&socket, &Message::Ready);
+                            let _ = send_msg(&mut stream, &Message::Ready);
                         } else {
-                            send_msg(&socket, &Message::Chat { player: player_name.clone(), text: input });
+                            let _ = send_msg(&mut stream, &Message::Chat { player: player_name.clone(), text: input });
                         }
                     }
                     Phase::Game => {
                         if let Ok(n) = input.parse::<usize>() {
                             if n >= 1 && n <= 4 && current_question.is_some() {
-                                send_msg(&socket, &Message::Answer(n - 1));
+                                let _ = send_msg(&mut stream, &Message::Answer(n - 1));
                                 q_timer = None;
                             }
                         } else {
-                            send_msg(&socket, &Message::Chat { player: player_name.clone(), text: input });
+                            let _ = send_msg(&mut stream, &Message::Chat { player: player_name.clone(), text: input });
                         }
                     }
                     Phase::Over => {}
