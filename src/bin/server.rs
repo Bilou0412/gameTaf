@@ -119,8 +119,8 @@ fn read_client_loop(client_id: usize, mut stream: TcpStream, tx: mpsc::Sender<Cl
 }
 
 fn main() -> std::io::Result<()> {
-    let listener = TcpListener::bind("0.0.0.0:80")?;
-    println!("GT Server on 0.0.0.0:80");
+    let listener = TcpListener::bind("0.0.0.0:8080")?;
+    println!("GT Server on 0.0.0.0:8080");
     println!("Waiting for players...");
 
     let questions = get_questions();
