@@ -45,10 +45,18 @@ fi
 
 cd "$INSTALL_DIR"
 
+# Check Rust/cargo
+if ! command -v cargo &>/dev/null; then
+    echo "[ERROR] cargo not found. Install Rust: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh"
+    exit 1
+fi
+echo "[*] Rust/cargo: $(cargo --version)"
+
 # Build the project
-echo "[*] Building project..."
-if ! cargo build --release 2>/dev/null; then
-    echo "[ERROR] Build failed. Make sure Rust is installed (https://rustup.rs)"
+echo "[*] Building project (this may take a few minutes)..."
+if ! cargo build --release; then
+    echo ""
+    echo "[ERROR] Build failed (see errors above)"
     exit 1
 fi
 
