@@ -59,90 +59,33 @@ cp target/release/server "$BIN_DIR/gt-server" 2>/dev/null || true
 # Create main launcher script
 cat > "$BIN_DIR/gt" << 'LAUNCHER_EOF'
 #!/bin/bash
-
 INSTALL_DIR="$HOME/.gt"
 BIN_DIR="$INSTALL_DIR/bin"
 
-show_menu() {
-    clear
-    echo "======================================="
-    echo "  GT - Main Menu"
-    echo "======================================="
-    echo ""
-    echo "  1 - Start Server"
-    echo "  2 - Join Game (Client)"
-    echo "  3 - Show Controls"
-    echo "  4 - Exit"
-    echo ""
-    echo -n "Choose option (1-4): "
-}
-
-show_controls() {
-    clear
-    echo "======================================="
-    echo "  GT - Game Controls"
-    echo "======================================="
-    echo ""
-    echo "  W or Z  - Move paddle up"
-    echo "  S      - Move paddle down"
-    echo "  Q      - Quit game"
-    echo ""
-    echo "  Ball bounces on surfaces"
-    echo "  First to 3 points wins!"
-    echo ""
-    read -p "Press Enter to return to menu..."
-}
-
-run_server() {
-    clear
-    echo "Starting Server..."
-    echo ""
-    
-    if [ -f "$BIN_DIR/gt-server" ]; then
-        exec "$BIN_DIR/gt-server"
-    else
-        echo "Building server..."
-        cd "$INSTALL_DIR" && cargo run --release --bin server
-    fi
-}
-
-run_client() {
-    clear
-    echo "Starting Client..."
-    echo ""
-    
-    if [ -f "$BIN_DIR/gt-client" ]; then
-        exec "$BIN_DIR/gt-client"
-    else
-        echo "Building client..."
-        cd "$INSTALL_DIR" && cargo run --release --bin client
-    fi
-}
-
-while true; do
-    show_menu
-    read -r choice
-    
-    case $choice in
-        1)
-            run_server
-            ;;
-        2)
-            run_client
-            ;;
-        3)
-            show_controls
-            ;;
-        4)
-            echo "Goodbye"
-            exit 0
-            ;;
-        *)
-            echo "Invalid option. Press Enter to retry..."
-            read
-            ;;
-    esac
-done
+case "${1:-help}" in
+    server)
+        if [ -f "$BIN_DIR/gt-server" ]; then
+            exec "$BIN_DIR/gt-server"
+        else
+            cd "$INSTALL_DIR" && exec cargo run --release --bin server 2>/dev/null
+        fi
+        ;;
+    client)
+        if [ -f "$BIN_DIR/gt-client" ]; then
+            exec "$BIN_DIR/gt-client"
+        else
+            cd "$INSTALL_DIR" && exec cargo run --release --bin client 2>/dev/null
+        fi
+        ;;
+    help|--help|-h|"")
+        echo "GT - Quiz"
+        echo "Usage: gt server|client"
+        ;;
+    *)
+        echo "Unknown: $1" >&2
+        exit 1
+        ;;
+esac
 LAUNCHER_EOF
 
 chmod +x "$BIN_DIR/gt"
@@ -165,18 +108,8 @@ fi
 
 # Success message
 echo ""
-echo "======================================="
-echo "  Installation Complete!"
-echo "======================================="
-echo ""
-echo "Quick start:"
-echo "  gt"
-echo ""
-echo "Installation directory:"
-echo "  $INSTALL_DIR"
-echo ""
-echo "Reload shell:"
-echo "  source $SHELL_RC"
-echo ""
-echo "Or open a new terminal."
+echo "[*] Installation Complete!"
+echo "[*] Commands:"
+echo "  gt server - Start server"
+echo "  gt client - Join game"
 echo ""
