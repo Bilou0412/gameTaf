@@ -96,7 +96,7 @@ Puis supprimez la ligne `termigame-pong` de votre `~/.zshrc` ou `~/.bashrc`.
 
 Réexécutez simplement le script d'installation :
 ```bash
-curl -fsSL https://raw.githubusercontent.com/USER/termigame-pong/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/bilou0412/termigame-pong/main/install.sh | bash
 ```
 
 ---

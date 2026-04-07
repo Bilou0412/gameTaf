@@ -6,7 +6,7 @@ Un jeu Pong classique jouable en terminal via UDP sur réseau local (LAN).
 
 ### Linux & macOS
 ```bash
-curl -fsSL https://raw.githubusercontent.com/USER/termigame-pong/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/bilou0412/termigame-pong/main/install.sh | bash
 ```
 
 ### Windows
