@@ -4,13 +4,9 @@ Un jeu Pong classique jouable en terminal via UDP sur réseau local (LAN).
 
 ## 🚀 Installation (Une ligne !)
 
-### Linux & macOS
 ```bash
 curl -fsSL https://raw.githubusercontent.com/bilou0412/termigame-pong/main/install.sh | bash
 ```
-
-### Windows
-Téléchargez le programme d'installation depuis les [Releases](https://github.com/USER/termigame-pong/releases)
 
 ### Après installation
 ```bash

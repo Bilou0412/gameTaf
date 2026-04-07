@@ -48,7 +48,7 @@ if [ -d "$INSTALL_DIR/.git" ]; then
     git pull origin main 2>/dev/null || true
 else
     echo -e "${YELLOW}📥 Téléchargement du projet...${NC}"
-    git clone https://github.com/USER/termigame-pong.git "$INSTALL_DIR" 2>/dev/null || {
+    git clone https://github.com/bilou0412/termigame-pong.git "$INSTALL_DIR" 2>/dev/null || {
         # Fallback if git is not available
         echo -e "${YELLOW}Git non disponible, téléchargement direct...${NC}"
         mkdir -p "$INSTALL_DIR"
@@ -56,7 +56,7 @@ else
         
         # Download with curl (simple fallback)
         if command -v curl &> /dev/null; then
-            curl -fsSL "https://github.com/USER/termigame-pong/archive/main.zip" -o /tmp/termigame.zip
+            curl -fsSL "https://github.com/bilou0412/termigame-pong/archive/main.zip" -o /tmp/termigame.zip
             unzip -q /tmp/termigame.zip -d /tmp/
             mv /tmp/termigame-pong-main/* "$INSTALL_DIR/"
             rm -rf /tmp/termigame.zip /tmp/termigame-pong-main

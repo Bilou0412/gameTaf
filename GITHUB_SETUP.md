@@ -24,23 +24,7 @@ Remplacez `VOTRE_USERNAME` par votre pseudo GitHub.
 
 ## Étape 3: Mettre à jour les URLs
 
-Remplacez `USER` par votre username dans ces fichiers:
-
-### [install.sh](install.sh)
-```bash
-git clone https://github.com/VOTRE_USERNAME/termigame-pong.git "$INSTALL_DIR"
-curl -fsSL "https://github.com/VOTRE_USERNAME/termigame-pong/archive/main.zip"
-```
-
-### [INSTALL.md](INSTALL.md)
-```bash
-curl -fsSL https://raw.githubusercontent.com/VOTRE_USERNAME/termigame-pong/main/install.sh | bash
-```
-
-### [README.md](README.md)
-```markdown
-[Releases](https://github.com/VOTRE_USERNAME/termigame-pong/releases)
-```
+### ✅ URLs déjà configurées pour `bilou0412`
 
 ## Étape 4: Créer une Release
 
